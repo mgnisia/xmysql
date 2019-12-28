@@ -1,38 +1,39 @@
-version: '3.5'
+version: '3'
 
 services:
-  db:
-    image: mysql:5.7
-    restart: always
-    command: --init-file /docker-entrypoint-initdb.d/sample.sql
-    environment:
-      MYSQL_ROOT_PASSWORD: 'pass'
-      MYSQL_USER: 'root'
-      MYSQL_PASSWORD: 'pass'
-      MYSQL_DATABASE: 'classicmodels'
-    volumes:
-      - ./tests/docker-sample.sql:/docker-entrypoint-initdb.d/sample.sql
-      - db-data:/var/lib/mysql
-    ports:
-      - "3306:3306"
 
-  db-api: &db-api
-    build:
-      context: ./
-      dockerfile: ./dev.Dockerfile
-    environment:
-      DATABASE_HOST: 'db'
-      DATABASE_USER: 'root'
-      DATABASE_PASSWORD: 'pass'
-      DATABASE_NAME: 'classicmodels'
-    ports:
-      - "3002:80"
-    depends_on:
-      - db
+    DB_Service:
+        image: mariadb:latest
+        # env_file:
+        #     - db.env
+        # volumes:
+        #     - volume definition
+        labels:
+            - "traefik.enable=false"
+            - "traefik.backend=db"
+            - "traefik.docker.network=somenetwork"
+        networks:
+        - somenetwork
 
-  test:
-    <<: *db-api
-    command: sh -c "npm test"
+    xmysql:
+        image: markuman/xmysql
+        networks:
+            - somenetwork
+        # env_file:
+        #     - api.env
+        labels:
+            - "traefik.backend=mautic_api"
+            - "traefik.docker.network=somenetwork"
+            - "traefik.enable=true"
+            - "traefik.frontend.auth.basic=username:password"
+            - "traefik.web.port=80"
+            - "traefik.web.frontend.rule=Host:mautic.einmalohnebitte.de;PathPrefixStrip:/api-mautic"
 
-volumes:
-  db-data:
+# volumes:
+#     - volume1:
+#     - volume2:
+
+networks:
+  somenetwork:
+  # if network is external
+  # external: true
