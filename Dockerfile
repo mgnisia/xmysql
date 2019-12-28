@@ -3,6 +3,7 @@ FROM node:alpine
 
 # Installing Xmysql
 RUN npm install -g xmysql
+
 # Exposing the port 80
 EXPOSE 80
 
